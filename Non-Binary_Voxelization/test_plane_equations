@@ -1,0 +1,73 @@
+import numpy as np
+
+
+def rotation_matrix(angles_in_degrees):
+    rx, ry, rz = np.radians(angles_in_degrees)
+
+    Rx = np.array([
+        [1, 0, 0],
+        [0, np.cos(rx), -np.sin(rx)],
+        [0, np.sin(rx), np.cos(rx)]
+    ])
+
+    Ry = np.array([
+        [np.cos(ry), 0, np.sin(ry)],
+        [0, 1, 0],
+        [-np.sin(ry), 0, np.cos(ry)]
+    ])
+
+    Rz = np.array([
+        [np.cos(rz), -np.sin(rz), 0],
+        [np.sin(rz), np.cos(rz), 0],
+        [0, 0, 1]
+    ])
+
+    return Rz @ Ry @ Rx  # Combined rotation matrix
+
+def get_plane_equations(angles_in_degrees):
+    
+    # Define cube vertices (assuming it's centered at origin with side length 2)
+    vertices = np.array([
+        [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],  # Bottom face
+        [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]  # Top face
+    ])
+
+    # Define the six face normals in the unrotated state
+    normals = np.array([
+        [0, 0, -1],  # Front
+        [0, 0, 1],   # Back
+        [-1, 0, 0],  # Left
+        [1, 0, 0],   # Right
+        [0, -1, 0],  # Bottom
+        [0, 1, 0]    # Top
+    ])
+
+    # Define points that belong to each face
+    face_points = np.array([
+        vertices[0],  # Front
+        vertices[4],  # Back
+        vertices[0],  # Left
+        vertices[1],  # Right
+        vertices[0],  # Bottom
+        vertices[3]   # Top
+    ])
+
+    # Apply rotation
+    R = rotation_matrix(angles_in_degrees)
+    rotated_normals = (R @ normals.T).T
+    rotated_points = (R @ face_points.T).T
+
+    # Compute plane equations: Ax + By + Cz + D = 0
+    planes = []
+    for normal, point in zip(rotated_normals, rotated_points):
+        A, B, C = normal
+        D = -np.dot(normal, point)
+        planes.append((A, B, C, D))
+
+    return planes
+
+angles_in_degrees = [45, 45, 45]  # Rotation angles in degrees
+plane_equations = get_plane_equations(angles_in_degrees)
+
+for i, (A, B, C, D) in enumerate(plane_equations):
+    print(f"Plane {i+1}: {A:.3f}x + {B:.3f}y + {C:.3f}z + {D:.3f} = 0")
